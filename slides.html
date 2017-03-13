@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Intro to Ethereum's smart contracts</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 { font-family: sans-serif; }
+      li { margin: 0.6em 0; }
+
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+
+      /* override background */
+      .remark-slides-area {
+        background: black;
+      }
+      .remark-slide-scaler {
+        -webkit-box-shadow: none;
+        box-shadow: none;
+      }
+      .remark-slide-content {
+        background: black;
+        font-size: 24px;
+        text-shadow: 0 0 20px #444;
+        color: #fee;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: middle, center
+# Hi
+
+---
+
+# Зачем БЧ?
+
+  - p2p сеть принимает решения
+    - нужен консенсус
+  - FLP: Impossibility of Distributed Consensus
+  - Satoshi Nakomoto: экономическое решение
+
+???
+
+BTC, ETH -- это в первую очередь децентрализованная сеть равноправных
+участников (совместно обрабатывают и хранят транзакции). Чтобы можно было
+делать финансовые транзакции, нужна защита от double-spending ---
+сериализация транзакции --- консенсус о порядке следования транзакций. В CS
+эта проблема не решается. БЧ экономическими методами решает проблему
+консенсуса в распределённой системе.
+
+---
+
+
+# Как работает?
+
+  - Майнер тратит ресурсы
+    - PoW: электричество
+    - PoS: деньги
+  - Нарушения легко обнаружить и доказать
+  - Выгоды и убытки можно измерить
+
+???
+ Чтобы экономика работала, необходимы следующие условия:
+
+  - майнер тратит ресурсы PoS -- залог за право подписи блока.
+    - определить обманщика легко (люди любят расковать, кто-то может начать
+    обманывать и при 1% вероятности выиграть).
+    - Хэши и подписи, в PoS подпись блока, штраф за два подписанных блока.
+
+  - выгоды и убытки должны быть измеримые. В ETH с этим сложнее: награда
+  только в ETH, а выгодой от обмана может быть владение токенами, право
+  голоса, возможность манипулировать оракулами.
+
+В приватных БЧ не все эти условия соблюдаются -- экономическая мотивация
+подменяется административными (централизованными) мерами.
+
+ - БЧ не нужен (есть PAXOS, Raft): R3 потратило на понимание этого 59 млн $.
+
+---
+
+# Смартконтракты
+
+  - BTC -- платёжная система
+  - ETH -- вычислительная платформа
+    - хранится код и состояние
+
+???
+
+ - BTC -- консенсус о том, у кого сколько денег.
+ - ETH -- консенсус об изменениях состояния.
+ - Отличия: явное представление состояния, явное состояние счетов.
+ - Смартконтракты позволяют проще делать некоторые вещи: пример с цветными
+   монеткми.
+ - метафора с телефонами
+
+---
+
+# Архитектура dApp
+
+  - JSON-RPC: web3.{js, hs}, nethereum, ethereumj
+  - ABI
+  - Web3 provider
+  - Public nodes
+  - IPFS + ENS
+
+???
+
+Код в БЧ (небольшие функции, требующие децентрализации и автономности),
+обслуживающий код на клиенте.  Примеры:
+
+  - автономная лотерея,
+  - community driven services -- alarm-clock (площадка, на которой
+  зарабатывают за полезные действия).
+
+ABI: в БЧ хранится только байткод контракта -- нет информации о названиях
+функций и типах данных. Для взаимодействия с контрактом это нужно. ABI = json
+со стандартным описанием интерфейса контракта: функции, типы аргументов,
+события.
+
+---
+
+# Account
+
+  - address
+  - balance (1e18 wei = 1 ether)
+  - nonce
+  - internal / external
+    - code
+    - storage
+
+???
+
+  - адрес = 20 байт хэша от pub key
+  - адрес = 20 байт хэша от rlp[creator, nonce]
+
+---
+
+# Transaction
+
+  - to
+  - value (1e18 wei = 1 ether)
+  - nonce
+  - data
+  - gas
+  - gasPrice
+
+???
+
+from получается из подписи транзакции
+
+---
+
+# Block
+
+  - hash / prevHash
+  - blockNumber
+  - timestamp
+  - tx[]
+  - log[]
+  - gasLimit
+
+???
+
+timestamp и blockNumber можно использовать чтобы мерять время
+
+logs:
+  - удобны для отладки
+  - не хранятся вечно
+  - можно получить проиграв транзакцию заново
+  - можно проверить по хэшу блока
+
+---
+
+# Gas market
+
+  - отделение стоимости транзакции от курса
+  - майнеры голосуют за размер блока
+  - лишний газ возвращается
+  - ADD = 3 gas, SSTORE = 20k / 5k gas
+  - (gasLimit = 4e6) *  (gasPrice = 2e-8) = 0.08 ETH
+
+---
+
+# Solidity
+
+  - memory / storage
+  - типы данных
+  - модификаторы
+  - события
+  - взаимодействие с другими
+
+---
+
+# Solidity types
+
+  - `uint256`, `uint248`, ... `uint8`
+  - `bytes1`, ... `bytes32`
+  - address
+    - balance
+    - send / transfer
+  - `bytes` / `string`
+  - struct
+  - `array[]`
+  - mapping
+
+???
+
+ - Только целочисленная арифметика (fp = недетерминизм).
+ - Нужно быть осторожнее с делением -- пример с пирамидой.
+ - 32-byte words: conversions are not free
+
+
+value types vs reference types.
+
+storage vs memory
+  - function parameters are in memory
+  - local variables are on stack or in storage
+  - assignments between storage and memory are copying
+    - local storage var <=> state storage
+  - storage_memory.sol
+
+компактная упаковка структур
+
+mapings are in storage
+  - local_mapping.sol
+
+контракт контракту не может вернуть `string[]`
+
+---
+
+# Solidity globals
+
+ - `msg.sender` (address): sender of the message (current call)
+ - `msg.value` (uint): number of wei sent with the message
+ - `now` (uint): alias for `block.timestamp`
+ - `ecrecover(...)`: recover address from sig
+
+---
+
+# Инструменты
+
+  - ноды: geth / parity
+  - провайдеры: Mist / Metamask / parity ui
+  - MEW / etherscan
+  - solc
+  - testrpc
+  - truffle
+
+---
+
+# Screencast
+
+  - account / block / transaction
+  - remix: compile / deploy
+  - send transaction / create contract / call function
+  - truffle: compile / deploy
+  - PoEx
+
+???
+
+send vs. call
+транзакция с исключением тоже включается в блок
+Wait for enough confirmations.
+
+Где результат транзакции? Можно добавить событие.
+
+
+It is not yet possible to use arrays of arrays in external functions.
+You can only use one level of dynamic arrays
+
+Due to limitations of the EVM, it is not possible to return dynamic content
+from external function calls. The function f in
+    contract C { function f() returns (uint[]) { ... } }
+will return something if called from web3.js, but
+not if called from Solidity. The only workaround for now is to use large
+statically-sized arrays.
+
+---
+
+# Ограничения
+
+  - нужно следить за газом
+  - memory / storage
+  - code immutability
+  - у контракта нет приватных данных
+  - порядок и доставка транзакций не гарантируется
+
+???
+
+  - пример с DoS -- лотерея
+  - нужно чётко различать операции изменяющие сосотяние и не изменяющие
+  - исправление ошибок в продакшене
+    - подмена кода: путь к уязвимостям, снижение доверия если централизованная (пример с фондом или лотереей)
+  - нет приватных данных, всё состояние можно прочитать
+    - реализация рандомности, вероятностных алгоритмов и структур данных (bloom filter, quick sort)
+  - транзакцию могут перехватить, задержать и выпустить перед ней свою (изменяющую состояние злонамеренным образом)
+    - 2-phase commit может помочь
+
+---
+
+# Что делать?
+
+  - минимум вычислений и данных в контрактах
+  - хэши вместо данных
+  - проверка результатов вместо вычислений
+  - в контрактах только то, что требует децентрализации
+
+???
+
+Если нужно хранить / передавать / обрабатывать много данных, значит вы делаете
+что-то не так.
+
+---
+
+# WP Wings
+
+  - accounts: balance, rating
+  - proponent posts proposal
+  - users forecast funds to be collected
+  - filter spam
+    - weighted sum
+  - value of the poll
+    - quartile coefficient of dispersion
+  - update ratings
+
+---
+
+# Домашнее задание
+
+  - сколько стоит (gas, ETH, USD)
+    - сохранить 1024 байта в блокчейне
+    - сложить 1024 числа
+
+---
+
+class: middle, center
+
+# Bye
+
+    </textarea>
+    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
